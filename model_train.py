@@ -1,5 +1,4 @@
-from __future__ import print_function
-
+import math
 from glob import glob
 
 import keras
@@ -7,8 +6,9 @@ from keras.callbacks import ModelCheckpoint
 from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Dense, Dropout, Flatten
 from keras.models import Sequential
+import random
 
-from data import get_mnist_data, num_classes, input_shape
+from data import get_mnist_data, num_classes, input_shape, get_fashionmnist_data
 from read_activations import get_activations, display_activations
 
 if __name__ == '__main__':
@@ -33,23 +33,24 @@ if __name__ == '__main__':
 
         print(model.summary())
 
-        x_train, y_train, x_test, y_test = get_mnist_data()
+        x_train, y_train, x_test, y_test = get_fashionmnist_data()
 
         # checking that the accuracy is the same as before 99% at the first epoch.
         test_loss, test_acc = model.evaluate(x_test, y_test, verbose=1, batch_size=128)
         print('')
-        assert test_acc > 0.98
-
-        a = get_activations(model, x_test[0:1], print_shape_only=True)  # with just one sample.
+        assert test_acc > 0
+        num = math.ceil(10*random.random())
+        a = get_activations(model, x_test[num:num+1], print_shape_only=True)  # with just one sample.
         display_activations(a)
 
-        get_activations(model, x_test[0:200], print_shape_only=True)  # with 200 samples.
+        # get_activations(model, x_test[0:200], print_shape_only=True)  # with 200 samples.
 
-        # import numpy as np
-        # import matplotlib.pyplot as plt
-        # plt.imshow(np.squeeze(x_test[0:1]), interpolation='None', cmap='gray')
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        plt.imshow(np.squeeze(x_test[num:num+1]), interpolation='None', cmap='gray')
     else:
-        x_train, y_train, x_test, y_test = get_mnist_data()
+        x_train, y_train, x_test, y_test = get_fashionmnist_data()
 
         model = Sequential()
         model.add(Conv2D(32, kernel_size=(3, 3),
@@ -57,10 +58,10 @@ if __name__ == '__main__':
                          input_shape=input_shape))
         model.add(Conv2D(64, (3, 3), activation='relu'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
+        model.add(Dropout(0.2))
         model.add(Flatten())
         model.add(Dense(128, activation='relu'))
-        model.add(Dropout(0.5))
+        model.add(Dropout(0.2))
         model.add(Dense(num_classes, activation='softmax'))
 
         model.compile(loss=keras.losses.categorical_crossentropy,
@@ -85,12 +86,12 @@ if __name__ == '__main__':
         model.fit(x_train, y_train,
                   batch_size=128,
                   epochs=12,
-                  verbose=1,
+                  verbose=2,
                   validation_data=(x_test, y_test),
                   callbacks=[checkpoint])
 
         # Change finishes here
 
-        score = model.evaluate(x_test, y_test, verbose=0)
+        score = model.evaluate(x_test, y_test, verbose=2)
         print('Test loss:', score[0])
         print('Test accuracy:', score[1])
